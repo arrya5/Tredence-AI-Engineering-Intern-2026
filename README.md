@@ -36,7 +36,9 @@ Upon debugging the forward pass logic, I identified a leak: **"Soft Pruning."** 
 
 ## 3. Visualization
 
-I have executed Matplotlib to chart the final architectural probabilities within the model. See the generated `gate_distribution.png`. A successfully self-pruning architecture polarizes structurally resulting in a huge histogram clustering on exactly `0.0`.
+The script natively generates a Matplotlib frequency histogram mapping the probability domains of all hidden gate values evaluating the `0.5` $\lambda$ model, exactly as requested by the original specification. You can see the resulting structural polarization heavily clustered at exactly `0.0`, rendering those connections functionally extinct.
+
+![Sparsity Probability Distribution Curve](./gate_distribution.png)
 
 ## Repository Walkthrough
 
@@ -48,6 +50,11 @@ I have executed Matplotlib to chart the final architectural probabilities within
 
 ---
 ## Getting Started
+
+### Reproducibility & Pipeline Workflow
+The codebase is structured to be completely deterministically reproducible. By running the training sequence, the core loop dynamically polls the parameterized evaluation matrices within `src/config.py`, immediately generating and systematically evaluating the architectures sequentially against the exact triad array `[0.0001, 0.01, 0.5]`.
+
+There are no Jupyter block adjustments needed; the Python script guarantees a 100% hands-free multi-lambda iteration, and automatically charts the visual metrics upon conclusion using `Matplotlib`.
 
 ```bash
 # 1. Pipeline Installation
