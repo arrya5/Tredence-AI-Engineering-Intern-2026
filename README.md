@@ -27,6 +27,13 @@ The minimum volume here rests at $\sigma(g_i) \approx 0.0$ which mathematically 
 
 *Conclusion:* Applying a balanced $\lambda$ parameter proves the effectiveness of dynamic regularization; the model is able to shed over half of its memory footprint geometry while maintaining statistical accuracy closely comparable to the heavy-weight baseline.
 
+### Engineering Challenge: The "Soft-Pruning" Illusion
+During initial testing runs, `lambda = 0.01` outputted phenomenal but mathematically suspicious results: **51% accuracy with 99.98% sparsity**. Because my MLP maps 3072 features through hidden layers (~1.7M weights), achieving 51% accuracy with only ~340 active connections was theoretically impossible. 
+
+Upon debugging the forward pass logic, I identified a leak: **"Soft Pruning."** The optimizer pushed the gates into deeply negative matrices, resolving through the Sigmoid activation to numbers like `0.009`. Because the metric function correctly flags anything beneath `0.01` as "pruned", it recorded 99.98% sparsity. However, during the evaluation forward pass `(pruned_weights = self.weight * gates)`, those residual numbers were surviving. `0.009 * weight` is not strictly zero, allowing the network to secretly utilize millions of tiny variables to build the "illusion" of a pruned network retaining 51% accuracy.
+
+**The Fix:** I instituted a **Hard Mask** strictly triggered inside `model.eval()`. Now during testing, any parameter falling beneath the threshold is brutally masked by exactly `0.0` before linear transformation. As shown in the true reporting table above, correctly enforcing this hard metric prevents the mathematical leak, revealing the intellectually honest limitations of an extremely sparse matrix collapsing to random guesses (10%), while verifying the success of a moderately pruned network.
+
 ## 3. Visualization
 
 I have executed Matplotlib to chart the final architectural probabilities within the model. See the generated `gate_distribution.png`. A successfully self-pruning architecture polarizes structurally resulting in a huge histogram clustering on exactly `0.0`.
